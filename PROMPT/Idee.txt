@@ -1,0 +1,3 @@
+- Intaller
+- Caricare csv anche attraverso email
+- Mandare un log "da qualche parte", anche all'esterno della rete aziendale per capire chi fa cosa e quali sono i messaggi di errore che ricevono

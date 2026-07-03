@@ -1,0 +1,3 @@
+- Dentro Configurazine Modulo TGM, quando si clicca su "Percorso Cartella Dati" deve aprirsi la schermata di windows per selezionare la cartella. Non deve aprirsi la cartella "Seleziona Cartella Dati"
+- TGM Module Configuration v1.6: quando clicco sul pulsante sfoglia non si apre la schermata di default di windows per selezionare la cartella
+
