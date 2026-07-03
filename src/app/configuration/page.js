@@ -128,6 +128,31 @@ export default function ConfigurationPage() {
     }
   };
 
+  const handleClearDatabase = async () => {
+    if (!config.dataSourcePath) return;
+    const confirmDelete = window.confirm(t('clearDbConfirm') || "Sei sicuro di voler azzerare il database? Questa operazione cancellerà tutti i dati in modo permanente.");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch('/api/tgm/sessions/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'clear-database',
+          targetPath: config.dataSourcePath
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(t('clearDbSuccess') || "Database azzerato con successo.");
+      } else {
+        alert((t('clearDbError') || "Errore durante l'azzeramento: ") + data.error);
+      }
+    } catch (error) {
+      alert((t('networkError') || "Errore di rete: ") + error.message);
+    }
+  };
+
   const preventEnterSubmit = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -271,6 +296,13 @@ export default function ConfigurationPage() {
                   className="bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-sm text-slate-200 transition-colors shadow-sm whitespace-nowrap"
                 >
                   {t('browse') || 'Sfoglia...'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearDatabase}
+                  className="bg-red-600/90 hover:bg-red-500 border border-red-700 rounded-lg px-4 py-2 text-sm text-white transition-colors shadow-sm whitespace-nowrap"
+                >
+                  {t('clearDatabase') || 'Cancella Database'}
                 </button>
               </div>
             </div>

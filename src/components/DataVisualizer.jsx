@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from "react";
-
-
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import TGMDatabaseContainer from '../../TGM/frontend/components/TGMDatabaseContainer';
 import Papa from "papaparse";
 import { Line } from "react-chartjs-2";
 // Chart.js v4 requires explicit registration of scales/controllers/elements/plugins
@@ -19,7 +18,7 @@ import {
 import zoomPlugin from 'chartjs-plugin-zoom';
 import annotationPlugin from 'chartjs-plugin-annotation';
 
-import React from 'react';
+
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api, authHeaders } from '../lib/api';
@@ -327,6 +326,7 @@ function DataVisualizer() {
     const data = parsed.data.map(row => {
       const out = {};
       Object.keys(row).forEach(k => {
+        const cleanKey = k.replace(/[^\x20-\x7E]/g, '').trim();
         let v = row[k];
         if (typeof v === 'string') {
           // convert european decimals: '1,234' -> '1.234' only if it looks like a number
@@ -334,11 +334,11 @@ function DataVisualizer() {
           if (numericLike) v = v.replace(',', '.');
           v = v.trim();
         }
-        out[k] = v;
+        out[cleanKey] = v;
       });
       return out;
     });
-    const hdrs = parsed.meta.fields || (data[0] ? Object.keys(data[0]) : []);
+    const hdrs = (parsed.meta.fields || (data[0] ? Object.keys(data[0]) : [])).map(h => h.replace(/[^\x20-\x7E]/g, '').trim());
 
     // Auto-guess defaults: if there's a header 'km', set it as default X and select numeric columns as Y
     const lower = hdrs.map(h => (h || '').toLowerCase());
@@ -348,6 +348,28 @@ function DataVisualizer() {
   }
 
   // Transform metadata lines (each a semicolon-separated string) into key/value pairs
+  // Decodifica i metadati "sporchi" dal Big5
+  function translateMangled(text, isKey) {
+    if (!text) return text;
+    // Rimuove i caratteri "Replacement Character" () causati dalla cattiva decodifica UTF-8
+    const clean = String(text).replace(/\ufffd/g, '').trim();
+    if (clean === 'uW') return 'Line Name';
+    if (clean === 'uO') return 'Line Type';
+    if (clean === 'W' && isKey) return 'Report Name';
+    if (clean === 'W' && !isKey) return 'Downward';
+    if (clean === 'U' && !isKey) return 'Upward';
+    if (clean === 'yDѼƳ') return 'Track Parameter Report';
+    if (clean === 'qH') return 'Surveyor';
+    if (clean === '}l{') return 'Start Mileage';
+    if (clean === '{') return 'End Mileage';
+    if (clean === '{W') return 'Mileage Decrease';
+    if (clean === 'i') return 'Wavelength';
+    if (clean === '25-3̪i' || clean.includes('25-3')) return '25m - 3m Wavelength';
+    if (clean === 'q') return 'Measurement Date';
+    if (clean === 'qɨ') return 'Measurement Time';
+    return text; // Fallback
+  }
+
   // We assume metadata tokens come in pairs: key;value;key;value;...
   function parseMetadataLines(lines) {
     const pairs = [];
@@ -355,7 +377,7 @@ function DataVisualizer() {
     lines.forEach(line => {
       const tokens = line.split(';').map(t => t.trim()).filter(t => t !== '');
       for (let i = 0; i < tokens.length; i += 2) {
-        const key = tokens[i] || '';
+        let key = tokens[i] || '';
         let value = tokens[i+1] || '';
         if (key.toLowerCase().includes('km')) {
           const num = Number(value.replace(',', '.'));
@@ -363,6 +385,27 @@ function DataVisualizer() {
             value = formatRailwayKm(num);
           }
         }
+        
+        // Applica la traduzione dal mangled Big5
+        key = translateMangled(key, true);
+        value = translateMangled(value, false);
+
+        if (key === 'Start Mileage' || key === 'End Mileage') {
+          const num = Number(value);
+          if (!isNaN(num)) {
+            value = num.toFixed(3) + ' km';
+          }
+        } else if (key === 'Measurement Date') {
+          // Format from 'YYYY.MM.DD' to 'Month DD, YYYY'
+          const dateParts = value.split(/[./-]/);
+          if (dateParts.length >= 3) {
+            const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            if (!isNaN(dateObj.getTime())) {
+              value = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+          }
+        }
+
         pairs.push({ key, value });
       }
     });
@@ -534,7 +577,7 @@ function DataVisualizer() {
   // no unit detection — keep X dynamic based on input
 
   // Load a CSV that's already on the server (in upload folder)
-  const loadServerCsv = async (fileName, folderName = 'upload', requestedSampleSize = sampleSize, storeFull = false) => {
+  const loadServerCsv = async (fileName, folderName = 'upload', requestedSampleSize = sampleSize, storeFull = false, source = 'upload', dbPath = '') => {
     setLastServerFile({ file: fileName, folder: folderName });
     setIsFullLoad(!!storeFull);
     setLoading(true);
@@ -564,7 +607,31 @@ function DataVisualizer() {
 
     try {
       let blob;
-      if (opConfig && opConfig.dataSourcePath) {
+      if (source === 'tgm') {
+        const url = `/api/tgm/sessions/${encodeURIComponent(folderName)}/downsample?path=${encodeURIComponent(dbPath)}&file=${encodeURIComponent(fileName)}&sampleSize=${requestedSampleSize}`;
+        const fetchResp = await fetch(url);
+        if (!fetchResp.ok) throw new Error('Failed to download from tgm api');
+        
+        const res = await fetchResp.json();
+        
+        setHeaders(res.headers);
+        setMetadata(res.metadataLines);
+        // Assuming parseMetadataLines is available in scope
+        try { setInfoPairs(parseMetadataLines(res.metadataLines)); } catch(e){}
+        setCsvData(res.sampledRows.slice(0, 500)); // preview
+        setSampledRows(res.sampledRows);
+        
+        const lower = (res.headers || []).map(h => (h || '').toLowerCase());
+        const kmIdx = lower.findIndex(c => c === 'km' || c.includes('km'));
+        if (kmIdx !== -1) setSelectedX(res.headers[kmIdx]);
+        
+        const numericCols = res.headers.slice(2, 5);
+        setSelectedYs(prev => prev.length > 0 ? prev : numericCols);
+        
+        setParseProgress({ parsed: res.totalDataRows, done: true });
+        setLoading(false);
+        return;
+      } else if (opConfig && opConfig.dataSourcePath) {
         const url = `/api/local-files?action=download&path=${encodeURIComponent(opConfig.dataSourcePath)}&file=${encodeURIComponent(fileName)}`;
         const fetchResp = await fetch(url);
         if (!fetchResp.ok) throw new Error('Failed to download from local-files');
@@ -600,7 +667,8 @@ function DataVisualizer() {
         setSampledRows([]);
         
         const lower = (res.hdrs || []).map(h => (h || '').toLowerCase());
-        if (lower.includes('km')) setSelectedX(res.hdrs[lower.indexOf('km')]);
+        const kmIdx = lower.findIndex(c => c === 'km' || c.includes('km'));
+        if (kmIdx !== -1) setSelectedX(res.hdrs[kmIdx]);
         const numericCols = res.hdrs.slice(2, 5);
         setSelectedYs(prev => prev.length > 0 ? prev : numericCols);
         
@@ -627,9 +695,9 @@ function DataVisualizer() {
               const row = results.data;
               if (!headerFound) {
                 const lower = row.map(c => (c || '').toString().trim().toLowerCase());
-                if (lower.includes('id') || lower.includes('km')) {
+                if (lower.some(c => c === 'id' || c === 'km' || c.includes('km'))) {
                   headerFound = true;
-                  hdrs = row.map(c => (c || '').toString().trim());
+                  hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
                   setHeaders(hdrs);
                 } else {
                   metadataLines.push(row.join(';'));
@@ -652,7 +720,7 @@ function DataVisualizer() {
           // parse the blob fully and set headers/data accordingly.
         } else {
           const detectedLower = (hdrs || []).map(h => (h || '').toLowerCase());
-          const hasKm = detectedLower.includes('km');
+          const hasKm = detectedLower.some(c => c === 'km' || c.includes('km'));
           const useOrdered = hasKm || !!selectedX;
           if (useOrdered) {
             // compute target indices (0-based) evenly spaced across totalDataRows
@@ -676,9 +744,9 @@ function DataVisualizer() {
                   const row = results.data;
                   if (!headerFound2) {
                     const lower = row.map(c => (c || '').toString().trim().toLowerCase());
-                    if (lower.includes('id') || lower.includes('km')) {
+                    if (lower.some(c => c === 'id' || c === 'km' || c.includes('km'))) {
                       headerFound2 = true;
-                      hdrs = row.map(c => (c || '').toString().trim());
+                      hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
                       setHeaders(hdrs);
                     } else {
                       // metadata already captured
@@ -703,7 +771,8 @@ function DataVisualizer() {
             setSampledRows(sampled);
             // try auto-select km and numeric Ys
             const lower = (hdrs || []).map(h => (h || '').toLowerCase());
-            if (lower.includes('km')) setSelectedX(hdrs[lower.indexOf('km')]);
+            const kmIdx = lower.findIndex(h => h === 'km' || h.includes('km'));
+            if (kmIdx !== -1) setSelectedX(hdrs[kmIdx]);
             const numericCols = (hdrs || []).filter(h => {
               for (let i = 0; i < Math.min(30, previewRows.length); i++) {
                 const v = previewRows[i][h];
@@ -744,13 +813,14 @@ function DataVisualizer() {
           const row = results.data;
           if (!headerFound) {
             const lower = row.map(c => (c || '').toString().trim().toLowerCase());
-            if (lower.includes('id') || lower.includes('km')) {
+            if (lower.some(c => c === 'id' || c === 'km' || c.includes('km'))) {
               headerFound = true;
-              hdrs = row.map(c => (c || '').toString().trim());
+              hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
               // Expose headers early so UI can render and auto-select km
               setHeaders(hdrs);
               const lowerHdrs = hdrs.map(h => (h || '').toLowerCase());
-              if (lowerHdrs.includes('km')) setSelectedX(hdrs[lowerHdrs.indexOf('km')]);
+              const kmIdx = lowerHdrs.findIndex(h => h === 'km' || h.includes('km'));
+              if (kmIdx !== -1) setSelectedX(hdrs[kmIdx]);
             } else {
               metadataLines.push(row.join(';'));
             }
@@ -777,7 +847,8 @@ function DataVisualizer() {
           if (previewRows.length === 1) {
             // first data row available: try to auto-select numeric Ys if not already set
             const lowerHdrs = hdrs.map(h => (h || '').toLowerCase());
-            if (!selectedX && lowerHdrs.includes('km')) setSelectedX(hdrs[lowerHdrs.indexOf('km')]);
+            const kmIdx = lowerHdrs.findIndex(h => h === 'km' || h.includes('km'));
+            if (!selectedX && kmIdx !== -1) setSelectedX(hdrs[kmIdx]);
             const numericCols = hdrs.filter(h => {
               for (let i = 0; i < Math.min(10, previewRows.length); i++) {
                 const v = previewRows[i][h];
@@ -905,7 +976,7 @@ function DataVisualizer() {
               const lower = row.map(c => (c || '').toString().trim().toLowerCase());
               if (lower.includes('id') || lower.includes('km')) {
                 headerFound = true;
-                hdrs = row.map(c => (c || '').toString().trim());
+                hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
                 setHeaders(hdrs);
               } else {
                 metadataLines.push(row.join(';'));
@@ -953,7 +1024,7 @@ function DataVisualizer() {
                   const lower = row.map(c => (c || '').toString().trim().toLowerCase());
                   if (lower.includes('id') || lower.includes('km')) {
                     headerFound2 = true;
-                    hdrs = row.map(c => (c || '').toString().trim());
+                    hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
                     setHeaders(hdrs);
                   } else {
                     // metadata already captured
@@ -1009,7 +1080,7 @@ function DataVisualizer() {
             const lower = row.map(c => (c || '').toString().trim().toLowerCase());
             if (lower.includes('id') || lower.includes('km')) {
               headerFound = true;
-              hdrs = row.map(c => (c || '').toString().trim());
+              hdrs = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
               setHeaders(hdrs);
               const lowerHdrs = hdrs.map(h => (h || '').toLowerCase());
               if (lowerHdrs.includes('km')) setSelectedX(hdrs[lowerHdrs.indexOf('km')]);
@@ -1390,28 +1461,29 @@ function DataVisualizer() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="flex flex-col gap-6">
-          {infoPairs && infoPairs.length > 0 && (
+      <div className="flex flex-col gap-6 mb-6">
+        {infoPairs && infoPairs.length > 0 && (
             <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
               <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
                 <h3 className="text-lg font-medium text-slate-200">{t('infoTitle') || 'Info'}</h3>
-                <div className="text-sm text-slate-400">{t('metadataExtracted') || 'Metadata extracted from upload'}</div>
+                <div className="text-sm text-slate-400">{t('metadataExtracted') || 'Metadata extracted from upload'}{(searchParams.get('folder') || lastServerFile?.folder) ? ` | ID: ${searchParams.get('folder') || lastServerFile?.folder}` : ''}</div>
               </div>
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {infoPairs.map((p, idx) => (
-                  <div key={idx} className="flex gap-2 items-start">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 w-28">{p.key}</div>
-                    <div className="text-sm text-slate-200">{p.value}</div>
+                  <div key={idx} className="flex gap-2 items-start min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 w-40 flex-shrink-0 whitespace-nowrap">{p.key}</div>
+                    <div className="text-sm text-slate-200 whitespace-nowrap overflow-hidden text-ellipsis" title={p.value}>{p.value}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden w-full">
             <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-slate-200">{t('configTitle') || 'Data / Chart Configuration'}</h3>
+              <h3 className="text-lg font-medium text-slate-200">
+                {t('configTitle') || 'Data / Chart Configuration'}
+              </h3>
               <div className="flex items-center gap-3">
                 <label className="inline-flex items-center px-4 py-2 border border-slate-600 hover:border-blue-500 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 cursor-pointer shadow-lg transition-all duration-200">
                   {t('importFile') || 'Load local'}
@@ -1435,33 +1507,7 @@ function DataVisualizer() {
             
             <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-semibold tracking-wide uppercase text-slate-300 mb-2">{t('loadServer') || 'Server files (upload/)'}</label>
-                <div className="border border-slate-700 bg-slate-900/50 rounded-xl p-2 max-h-48 overflow-auto shadow-inner">
-                  <>
-          <div className="flex font-semibold text-sm text-slate-400 uppercase tracking-wider py-2 px-3 border-b border-slate-700/50">
-            <span className="flex-1">Name</span>
-            <span className="ml-4">Date</span>
-            <span className="ml-4">Size</span>
-          </div>
-          {availableFiles.length === 0 ? (
-                    <div className="text-sm text-slate-500 py-4 text-center">{t('noFileSelected') || 'No files'}</div>
-                  ) : (
-                    availableFiles.map(f => {
-                      const name = typeof f === 'string' ? f : f.name;
-                      const size = (f.size !== undefined && f.size !== null) ? (f.size / 1024).toFixed(1) + ' KB' : '';
-                      const date = f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '';
-                      return (
-                        <div key={name} className="flex flex-col sm:flex-row sm:items-center justify-between py-2 px-3 hover:bg-blue-600/20 rounded-lg border-b border-slate-800 last:border-0 group cursor-pointer transition-colors" onClick={() => loadServerCsv(name, searchParams.get('folder') || 'upload')}>
-                          <button className="text-sm text-slate-200 text-left font-medium truncate flex-1">{name}</button>
-                          <div className="flex items-center gap-4 text-xs text-slate-400 mt-1 sm:mt-0 transition-opacity whitespace-nowrap">
-                            {date && <span>{date}</span>}
-                            {size && <span className="bg-slate-800 px-2 py-1 rounded shadow-sm mr-2 text-slate-300">{size}</span>}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}</>
-                </div>
+                <TGMDatabaseContainer onPlaySession={(s, dbPath) => loadServerCsv('軌道參數報表.csv', s.id, sampleSize, false, 'tgm', dbPath)} />
               </div>
 
               {showUploadModal && uploadCandidate ? (
@@ -1505,12 +1551,18 @@ function DataVisualizer() {
                 </div>
               </div>
             </div>
+            {(process.env.NEXT_PUBLIC_DEBUG_MODE === 'true' || true) && (
+              <div className="absolute bottom-1 right-2 text-[10px] text-slate-300 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-slate-900/80 px-2 py-0.5 rounded shadow">
+                ID: card-config
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden min-h-[300px] flex flex-col">
+        <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden min-h-[400px] flex flex-col w-full">
           <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-medium text-slate-200">{t('mapTitle') || 'Google Maps'}</h3>
+            <h3 className="text-lg font-medium text-slate-200">
+              {t('mapTitle') || 'Google Maps'}
+            </h3>
           </div>
           <div className="flex-1 p-0 relative min-h-[300px]">
             {(() => {
@@ -1529,10 +1581,15 @@ function DataVisualizer() {
               );
             })()}
           </div>
-        </div>
+        {(process.env.NEXT_PUBLIC_DEBUG_MODE === 'true' || true) && (
+          <div className="absolute bottom-1 right-2 text-[10px] text-slate-300 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-slate-900/80 px-2 py-0.5 rounded shadow">
+            ID: card-map
+          </div>
+        )}
       </div>
+    </div>
 
-      {headers.length > 0 ? (
+    {headers.length > 0 ? (
         <>
           <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden mb-6 p-6" style={{ height: Math.max(420, selectedYs.length * 150) + 100 }}>
             <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
@@ -1778,6 +1835,7 @@ function DataVisualizer() {
           <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
             <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-slate-700">{t('defectsTitle') || 'Report Difetti e Tolleranze (EN 13231-3)'}</h3>
+              <div className="text-sm text-slate-400">{(searchParams.get('folder') || lastServerFile?.folder) ? `ID: ${searchParams.get('folder') || lastServerFile?.folder}` : ''}</div>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {selectedYs.map(col => {

@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+configuration/config.json
+database/tolerances_db.json
+
+# File di archivio (come trackg_web-main.zip)
+*.zip
+*.tar.gz
+*.rar
+# Cartelle degli Editor / IDE
+.vscode/
+.idea/
