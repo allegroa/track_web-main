@@ -162,23 +162,22 @@ export default function ConfigurationPage() {
   const hasValidOperator = isCreatingNew ? newOperatorName.trim().length > 0 : selectedOperator.length > 0;
 
   return (
-    <main className="min-h-screen bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-slate-100 flex items-center justify-center p-4">
-      {/* Container: Full width instead of max-w-2xl */}
-      <div className="w-full max-w-7xl bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300">
+    <main className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center p-6">
+      <div className="w-full max-w-5xl bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300 mt-6">
         
         {/* Header */}
-        <div className="relative px-6 py-8 border-b border-slate-700/50 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 flex items-center gap-3">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent">
-            {t('tgmConfigTitle') || 'Configurazione Modulo TGM'}
-          </h1>
-          <span className="text-sm font-normal text-blue-300 bg-blue-900/50 border border-blue-700/50 px-2.5 py-1 rounded-md shadow-sm">
-            v1.6
-          </span>
-        </div>
-        <div className="px-6 py-3 bg-slate-900/30 border-b border-slate-700/50">
-          <p className="text-slate-400 text-sm">
-            {t('tgmConfigDesc') || "Gestisci le preferenze di visualizzazione specifiche per ciascun operatore. L'operatore salvato diverrà quello attivo."}
-          </p>
+        <div className="px-6 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+              {t('tgmConfigTitle') || 'Configurazione Modulo TGM'}
+              <span className="bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded text-sm shadow-sm">
+                v1.6
+              </span>
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              {t('tgmConfigDesc') || "Gestisci le preferenze di visualizzazione specifiche per ciascun operatore. L'operatore salvato diverrà quello attivo."}
+            </p>
+          </div>
         </div>
 
         {/* Content */}
@@ -203,9 +202,9 @@ export default function ConfigurationPage() {
           )}
 
           {/* Selezione Operatore */}
-          <div className="bg-slate-700/30 border border-slate-700/30 rounded-xl p-4 md:p-6 space-y-4">
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 md:p-6 space-y-4 shadow-sm">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-semibold tracking-wide uppercase text-slate-300">
+              <label className="text-sm font-semibold tracking-wide uppercase text-slate-700">
                 {t('operatorLabel') || 'Operatore'}
               </label>
               <button
@@ -214,7 +213,7 @@ export default function ConfigurationPage() {
                   setIsCreatingNew(!isCreatingNew);
                   setMessage({ type: '', text: '' });
                 }}
-                className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors focus:outline-none bg-slate-800/50 px-3 py-1.5 rounded-md border border-slate-600/50"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100"
               >
                 {isCreatingNew ? (t('selectExisting') || 'Seleziona esistente') : (t('newOperator') || '+ Nuovo Operatore')}
               </button>
@@ -229,7 +228,7 @@ export default function ConfigurationPage() {
                   value={newOperatorName}
                   onChange={(e) => setNewOperatorName(e.target.value)}
                   onKeyDown={preventEnterSubmit}
-                  className="w-full md:w-1/2 bg-slate-900/60 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                  className="w-full md:w-1/2 bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-4 py-2.5 text-slate-800 placeholder-slate-400 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
                 />
                 <p className="text-xs text-slate-500">{t('operatorHint') || "Solo lettere, numeri, trattini e underscore."}</p>
               </div>
@@ -238,7 +237,7 @@ export default function ConfigurationPage() {
                 value={selectedOperator}
                 onChange={(e) => setSelectedOperator(e.target.value)}
                 disabled={operators.length === 0}
-                className="w-full md:w-1/2 bg-slate-900/60 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-4 py-2.5 text-slate-100 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full md:w-1/2 bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-4 py-2.5 text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {operators.length === 0 ? (
                   <option value="">{t('noOperators') || 'Nessun operatore configurato (Creane uno nuovo)'}</option>
@@ -252,55 +251,55 @@ export default function ConfigurationPage() {
           </div>
 
           {/* Origine Dati */}
-          <div className={`bg-slate-700/30 border border-slate-700/30 rounded-xl p-4 md:p-6 space-y-4 transition-opacity ${hasValidOperator ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-300">{t('dataLocation') || 'Posizione Dati'}</h3>
+          <div className={`bg-slate-50 border border-slate-100 rounded-xl p-4 md:p-6 space-y-4 shadow-sm transition-opacity ${hasValidOperator ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-700">{t('dataLocation') || 'Posizione Dati'}</h3>
             <div className="flex gap-4 mb-3">
-              <label className="flex items-center space-x-2 text-sm text-slate-300 cursor-pointer">
+              <label className="flex items-center space-x-2 text-sm text-slate-600 cursor-pointer">
                 <input 
                   type="radio" 
                   name="dataSourceType" 
                   value="local" 
                   checked={config.dataSourceType === 'local'} 
                   onChange={(e) => setConfig({ ...config, dataSourceType: e.target.value })}
-                  className="text-blue-600 border-slate-700 bg-slate-900/40 focus:ring-blue-500"
+                  className="text-blue-600 border-slate-300 bg-white focus:ring-blue-500"
                 />
                 <span>{t('local') || 'Locale'}</span>
               </label>
-              <label className="flex items-center space-x-2 text-sm text-slate-300 cursor-pointer">
+              <label className="flex items-center space-x-2 text-sm text-slate-600 cursor-pointer">
                 <input 
                   type="radio" 
                   name="dataSourceType" 
                   value="nas" 
                   checked={config.dataSourceType === 'nas'} 
                   onChange={(e) => setConfig({ ...config, dataSourceType: e.target.value })}
-                  className="text-blue-600 border-slate-700 bg-slate-900/40 focus:ring-blue-500"
+                  className="text-blue-600 border-slate-300 bg-white focus:ring-blue-500"
                 />
                 <span>{t('nasNetworkPath') || 'NAS / Percorso di Rete'}</span>
               </label>
             </div>
             
             <div className="flex flex-col space-y-2 relative">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('dataFolderPath') || 'Percorso Cartella Dati'}</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('dataFolderPath') || 'Percorso Cartella Dati'}</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={config.dataSourcePath}
                   onChange={(e) => setConfig({ ...config, dataSourcePath: e.target.value })}
                   onKeyDown={preventEnterSubmit}
-                  className="flex-1 bg-slate-900/40 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="flex-1 bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder={config.dataSourceType === 'nas' ? '\\\\IndirizzoNAS\\Cartella\\Dati' : 'C:\\Dati\\Operatore'}
                 />
                 <button
                   type="button"
                   onClick={() => setIsFileBrowserOpen(true)}
-                  className="bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-sm text-slate-200 transition-colors shadow-sm whitespace-nowrap"
+                  className="bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 transition-colors shadow-sm whitespace-nowrap font-medium"
                 >
                   {t('browse') || 'Sfoglia...'}
                 </button>
                 <button
                   type="button"
                   onClick={handleClearDatabase}
-                  className="bg-red-600/90 hover:bg-red-500 border border-red-700 rounded-lg px-4 py-2 text-sm text-white transition-colors shadow-sm whitespace-nowrap"
+                  className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg px-4 py-2 text-sm transition-colors shadow-sm whitespace-nowrap font-medium"
                 >
                   {t('clearDatabase') || 'Cancella Database'}
                 </button>
@@ -313,35 +312,36 @@ export default function ConfigurationPage() {
             
             {/* Lingua Default */}
             <div className="flex flex-col space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('defaultLanguage') || 'Lingua Default'}</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('defaultLanguage') || 'Lingua Default'}</label>
               <select
                 value={config.language}
                 onChange={(e) => setConfig({ ...config, language: e.target.value })}
-                className="bg-slate-900/40 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="en">English (Default)</option>
                 <option value="zh">Chinese (Simplified)</option>
                 <option value="zh-TW">Taiwanese (Traditional)</option>
                 <option value="de">Deutsch (German)</option>
+                <option value="it">Italiano (Italian)</option>
               </select>
             </div>
 
             {/* Asse X di Default */}
             <div className="flex flex-col space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('defaultXAxis') || 'Asse X Default'}</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('defaultXAxis') || 'Asse X Default'}</label>
               <input
                 type="text"
                 value={config.selectedX}
                 onChange={(e) => setConfig({ ...config, selectedX: e.target.value })}
                 onKeyDown={preventEnterSubmit}
-                className="bg-slate-900/40 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="es. km"
               />
             </div>
 
             {/* Dimensione Campione */}
             <div className="flex flex-col space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('sampleSizePts') || 'Dimensione Campione (Punti)'}</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('sampleSizePts') || 'Dimensione Campione (Punti)'}</label>
               <input
                 type="number"
                 min="100"
@@ -349,13 +349,13 @@ export default function ConfigurationPage() {
                 value={config.sampleSize}
                 onChange={(e) => setConfig({ ...config, sampleSize: parseInt(e.target.value) || 2000 })}
                 onKeyDown={preventEnterSubmit}
-                className="bg-slate-900/40 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {/* Lunghezza Sezione */}
             <div className="flex flex-col space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('sectionLengthMeters') || 'Lunghezza Sezione (Metri)'}</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('sectionLengthMeters') || 'Lunghezza Sezione (Metri)'}</label>
               <input
                 type="number"
                 min="10"
@@ -363,20 +363,20 @@ export default function ConfigurationPage() {
                 value={config.sectionLength}
                 onChange={(e) => setConfig({ ...config, sectionLength: parseInt(e.target.value) || 200 })}
                 onKeyDown={preventEnterSubmit}
-                className="bg-slate-900/40 border border-slate-700 hover:border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-200 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {/* Abilita Campionamento */}
-            <div className="md:col-span-2 flex items-center space-x-3 p-3 bg-slate-900/20 border border-slate-700/30 rounded-lg">
+            <div className="md:col-span-2 flex items-center space-x-3 p-3 bg-slate-50 border border-slate-100 rounded-lg">
               <input
                 type="checkbox"
                 id="useSampling"
                 checked={config.useSampling}
                 onChange={(e) => setConfig({ ...config, useSampling: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-slate-700 rounded bg-slate-900/40 focus:ring-blue-500 focus:ring-offset-slate-900 focus:ring-1"
+                className="w-4 h-4 text-blue-600 border-slate-300 rounded bg-white focus:ring-blue-500 focus:ring-offset-slate-50 focus:ring-1"
               />
-              <label htmlFor="useSampling" className="text-sm text-slate-300 font-medium select-none cursor-pointer">
+              <label htmlFor="useSampling" className="text-sm text-slate-700 font-medium select-none cursor-pointer">
                 {t('enableSampling') || 'Abilita il campionamento dei dati di default (consigliato per file grandi)'}
               </label>
             </div>
@@ -384,18 +384,18 @@ export default function ConfigurationPage() {
           </div>
 
           {/* Azioni */}
-          <div className="pt-6 border-t border-slate-700/50 flex flex-col sm:flex-row sm:justify-between items-center gap-4">
+          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:justify-between items-center gap-4">
             <button
               type="button"
               onClick={() => router.push('/')}
-              className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold border border-slate-600 hover:border-slate-500 hover:bg-slate-700/20 text-slate-300 rounded-lg transition-all duration-200 text-center"
+              className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition-all duration-200 text-center"
             >
-              {t('cancelAndReturn') || 'Annulla e Torna'}
+              {t('cancelAndReturn') || 'Annulla e Torna alla Home'}
             </button>
             <button
               type="submit"
               disabled={loading || !hasValidOperator}
-              className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold rounded-lg shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-center"
+              className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-center"
             >
               {loading ? (t('saving') || 'Salvataggio...') : (t('saveConfiguration') || 'Salva Configurazione')}
             </button>

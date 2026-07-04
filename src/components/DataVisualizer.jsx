@@ -1433,26 +1433,26 @@ function DataVisualizer() {
   }, [csvData, sampledRows, useSampling, selectedYs, singularities, tolerances, selectedX]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-slate-100 p-4 w-full">
-      {parseError && <div className="mb-4 bg-rose-500/10 border-l-4 border-rose-500 p-3 rounded-lg"><div className="text-sm text-rose-400 font-medium">{parseError}</div></div>}
-      {uploadStatus && <div className={`mb-4 ${uploadStatus.type === 'success' ? 'bg-emerald-500/10 border-l-4 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-l-4 border-rose-500 text-rose-400'} p-3 rounded-lg font-medium`}><div className="text-sm">{uploadStatus.msg}</div></div>}
+    <div className="min-h-screen bg-slate-100 text-slate-800 p-4 w-full">
+      {parseError && <div className="mb-4 bg-rose-50 border-l-4 border-rose-500 p-3 rounded-lg"><div className="text-sm text-rose-700 font-medium">{parseError}</div></div>}
+      {uploadStatus && <div className={`mb-4 ${uploadStatus.type === 'success' ? 'bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700' : 'bg-rose-50 border-l-4 border-rose-500 text-rose-700'} p-3 rounded-lg font-medium`}><div className="text-sm">{uploadStatus.msg}</div></div>}
 
       <div className="mb-8">
         <div className="flex justify-between items-center w-full">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent flex items-center">
-              <svg className="w-7 h-7 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-800 flex items-center">
+              <svg className="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               TGM Visualizer
-              <span className="text-sm font-normal text-blue-300 bg-blue-900/50 border border-blue-700/50 px-2 py-0.5 rounded-md shadow-sm ml-3">
+              <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md ml-3">
                 v1.6
               </span>
             </h2>
-            <p className="text-slate-400 mt-1">{t('visualizeExplore') || 'Visualize and explore your CSV data'}</p>
+            <p className="text-slate-400 text-sm mt-1">{t('visualizeExplore') || 'Visualize and explore your CSV data'}</p>
           </div>
           <div className="flex gap-4 items-center">
             <button 
               onClick={() => router.push('/configuration')}
-              className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-all duration-200 hover:-translate-y-0.5"
+              className="flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-md font-medium text-sm transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <span>{t('configureGraphs')}</span>
@@ -1462,44 +1462,35 @@ function DataVisualizer() {
       </div>
 
       <div className="flex flex-col gap-6 mb-6">
-        {infoPairs && infoPairs.length > 0 && (
-            <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-slate-200">{t('infoTitle') || 'Info'}</h3>
-                <div className="text-sm text-slate-400">{t('metadataExtracted') || 'Metadata extracted from upload'}{(searchParams.get('folder') || lastServerFile?.folder) ? ` | ID: ${searchParams.get('folder') || lastServerFile?.folder}` : ''}</div>
+        <div className="flex-1 flex flex-col gap-6">
+          {infoPairs && infoPairs.length > 0 && (
+            <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+              <div className="border-b border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-lg font-medium text-slate-800">{t('infoTitle') || 'Info'}</h3>
+                <div className="text-sm text-slate-500">{t('metadataExtracted') || 'Metadata extracted from upload'}{(searchParams.get('folder') || lastServerFile?.folder) ? ` | ID: ${searchParams.get('folder') || lastServerFile?.folder}` : ''}</div>
               </div>
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {infoPairs.map((p, idx) => (
                   <div key={idx} className="flex gap-2 items-start min-w-0">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 w-40 flex-shrink-0 whitespace-nowrap">{p.key}</div>
-                    <div className="text-sm text-slate-200 whitespace-nowrap overflow-hidden text-ellipsis" title={p.value}>{p.value}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 w-40 flex-shrink-0 whitespace-nowrap">{p.key}</div>
+                    <div className="text-sm text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis" title={p.value}>{p.value}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden w-full">
-            <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-slate-200">
-                {t('configTitle') || 'Data / Chart Configuration'}
-              </h3>
+          <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden w-full relative">
+            <div className="border-b border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
+              <div>{/* Titolo rimosso come da richiesta */}</div>
               <div className="flex items-center gap-3">
-                <label className="inline-flex items-center px-4 py-2 border border-slate-600 hover:border-blue-500 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 cursor-pointer shadow-lg transition-all duration-200">
-                  {t('importFile') || 'Load local'}
-                  <input type="file" accept=".csv,.geo" className="hidden" onChange={e => { if (e.target.files[0]) handleLocalFile(e.target.files[0]); }} />
-                </label>
-                <label className="inline-flex items-center px-4 py-2 border border-slate-600 hover:border-slate-500 rounded-lg text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 cursor-pointer transition-all duration-200">
-                  Upload to server
-                  <input type="file" accept=".csv,.geo" className="hidden" onChange={e => { const f = e.target.files[0]; if (f) { setUploadCandidate(f); setShowUploadModal(true); } }} />
-                </label>
                 {parseProgress && !parseProgress.done && (
-                  <div className="inline-flex items-center px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-sm text-slate-300">
-                      <svg className="w-4 h-4 mr-2 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <div className="inline-flex items-center px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
+                      <svg className="w-4 h-4 mr-2 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                       </svg>
-                      Parsing {parseProgress.parsed || 0} rows{parseProgress.seen ? ` (seen ${parseProgress.seen})` : ''}... {isFullLoad ? <span className="text-xs text-amber-500 ml-2">full load</span> : null}
+                      Parsing {parseProgress.parsed || 0} rows{parseProgress.seen ? ` (seen ${parseProgress.seen})` : ''}... {isFullLoad ? <span className="text-xs text-orange-500 ml-2">full load</span> : null}
                     </div>
                 )}
               </div>
@@ -1507,7 +1498,9 @@ function DataVisualizer() {
             
             <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <TGMDatabaseContainer onPlaySession={(s, dbPath) => loadServerCsv('軌道參數報表.csv', s.id, sampleSize, false, 'tgm', dbPath)} />
+                <TGMDatabaseContainer 
+                  onPlaySession={(s, dbPath) => loadServerCsv('軌道參數報表.csv', s.id, sampleSize, false, 'tgm', dbPath)} 
+                />
               </div>
 
               {showUploadModal && uploadCandidate ? (
@@ -1552,18 +1545,22 @@ function DataVisualizer() {
               </div>
             </div>
             {(process.env.NEXT_PUBLIC_DEBUG_MODE === 'true' || true) && (
-              <div className="absolute bottom-1 right-2 text-[10px] text-slate-300 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-slate-900/80 px-2 py-0.5 rounded shadow">
+              <div className="absolute bottom-1 right-2 text-[10px] text-slate-400 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-white/80 border border-slate-200 px-2 py-0.5 rounded shadow">
                 ID: card-config
               </div>
             )}
           </div>
+        </div>
 
-        <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden min-h-[400px] flex flex-col w-full">
-          <div className="border-b border-slate-700/50 bg-slate-900/40 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-medium text-slate-200">
-              {t('mapTitle') || 'Google Maps'}
-            </h3>
-          </div>
+        {/* Right Side: Map (Temporaneamente disabilitato) */}
+        {false && (
+          <div className="flex-1 min-w-[300px]">
+            <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden min-h-[400px] h-full flex flex-col relative w-full">
+            <div className="border-b border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-slate-800">
+                {t('mapTitle') || 'Google Maps'}
+              </h3>
+            </div>
           <div className="flex-1 p-0 relative min-h-[300px]">
             {(() => {
               const displayCoords = hoveredCoords || { lat: 45.5513, lon: 12.0725 };
@@ -1582,31 +1579,33 @@ function DataVisualizer() {
             })()}
           </div>
         {(process.env.NEXT_PUBLIC_DEBUG_MODE === 'true' || true) && (
-          <div className="absolute bottom-1 right-2 text-[10px] text-slate-300 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-slate-900/80 px-2 py-0.5 rounded shadow">
+          <div className="absolute bottom-1 right-2 text-[10px] text-slate-400 font-mono pointer-events-none opacity-50 transition-opacity hover:opacity-100 z-50 bg-white/80 border border-slate-200 px-2 py-0.5 rounded shadow">
             ID: card-map
           </div>
         )}
+          </div>
+        </div>
+        )}
       </div>
-    </div>
 
     {headers.length > 0 ? (
         <>
-          <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden mb-6 p-6" style={{ height: Math.max(420, selectedYs.length * 150) + 100 }}>
+          <div className="relative bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden mb-6 p-6" style={{ height: Math.max(420, selectedYs.length * 150) + 100 }}>
             <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
               {geoDatasets.length > 1 && (
-                <button className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center font-bold border border-slate-600 transition-all" onClick={() => setShowGeoModal(true)}>Gestione Acquisizioni</button>
+                <button className="bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-md shadow-sm text-sm flex items-center font-medium transition-all" onClick={() => setShowGeoModal(true)}>Gestione Acquisizioni</button>
               )}
-              <button className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center font-bold border border-slate-600 transition-all" onClick={() => chartRef.current?.resetZoom()}>{t('resetZoom') || 'Reset Zoom'}</button>
-              <button className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center font-bold border border-slate-600 transition-all" onClick={saveSingularities}>{t('saveDatabase') || 'Salva DB Linee'}</button>
+              <button className="bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-md shadow-sm text-sm flex items-center font-medium transition-all" onClick={() => chartRef.current?.resetZoom()}>{t('resetZoom') || 'Reset Zoom'}</button>
+              <button className="bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-md shadow-sm text-sm flex items-center font-medium transition-all" onClick={saveSingularities}>{t('saveDatabase') || 'Salva DB Linee'}</button>
               <div className="relative">
-                <button className="bg-slate-800 hover:bg-slate-700 text-slate-200 w-9 h-9 flex items-center justify-center rounded-lg shadow-lg font-bold border border-slate-600 transition-all" onClick={() => setShowYMenu(!showYMenu)}>⋯</button>
+                <button className="bg-slate-900 text-white hover:bg-slate-800 w-9 h-9 flex items-center justify-center rounded-md shadow-sm font-medium transition-all" onClick={() => setShowYMenu(!showYMenu)}>⋯</button>
                 {showYMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-slate-700 bg-slate-900/50 font-medium text-sm text-slate-200 flex justify-between items-center">{t('configureGraphs') || 'Configura Grafici'} (Asse Y) <button onClick={() => setShowYMenu(false)} className="text-slate-400 hover:text-white transition-colors">&times;</button></div>
-                    <div className="max-h-60 overflow-auto p-2 bg-slate-800/90">
-                      {headers.length === 0 ? <div className="text-sm text-slate-400 p-2 text-center">Nessuna serie disponibile</div> : headers.filter(h => h !== selectedX).map(h => (
-                        <label key={h} className="flex items-center gap-3 text-sm py-2 px-3 hover:bg-blue-600/20 cursor-pointer rounded-lg text-slate-300 transition-colors">
-                          <input type="checkbox" checked={selectedYs.includes(h)} onChange={() => toggleY(h)} className="rounded border-slate-500 bg-slate-900" />
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 font-medium text-sm text-slate-800 flex justify-between items-center">{t('configureGraphs') || 'Configura Grafici'} (Asse Y) <button onClick={() => setShowYMenu(false)} className="text-slate-400 hover:text-slate-600 transition-colors">&times;</button></div>
+                    <div className="max-h-60 overflow-auto p-2 bg-white">
+                      {headers.length === 0 ? <div className="text-sm text-slate-500 p-2 text-center">Nessuna serie disponibile</div> : headers.filter(h => h !== selectedX).map(h => (
+                        <label key={h} className="flex items-center gap-3 text-sm py-2 px-3 hover:bg-slate-50 cursor-pointer rounded-lg text-slate-700 transition-colors">
+                          <input type="checkbox" checked={selectedYs.includes(h)} onChange={() => toggleY(h)} className="rounded border-slate-300" />
                           <span className="truncate">{h}</span>
                         </label>
                       ))}
@@ -1617,14 +1616,14 @@ function DataVisualizer() {
             </div>
 
             {contextMenu && (
-              <div className="absolute bg-slate-800 rounded-xl shadow-2xl border border-slate-600 z-50 overflow-hidden" style={{ left: contextMenu.x + 20, top: Math.max(contextMenu.y - 50, 10) }}>
-                <div className="bg-slate-900/50 px-4 py-2 text-xs font-bold text-slate-300 border-b border-slate-700 flex justify-between items-center">
-                  <span>Km: {contextMenu.formattedKm || contextMenu.kmLabel}</span><button onClick={() => setContextMenu(null)} className="ml-4 text-slate-400 hover:text-white transition-colors">&times;</button>
+              <div className="absolute bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden" style={{ left: contextMenu.x + 20, top: Math.max(contextMenu.y - 50, 10) }}>
+                <div className="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 border-b border-slate-100 flex justify-between items-center">
+                  <span>Km: {contextMenu.formattedKm || contextMenu.kmLabel}</span><button onClick={() => setContextMenu(null)} className="ml-4 text-slate-400 hover:text-slate-600 transition-colors">&times;</button>
                 </div>
                 <ul className="py-2">
                   {[ { type: 'Semaforo', icon: '🚦' }, { type: 'Passaggio a livello', icon: '🚧' }, { type: 'Fabbricato viaggiatori', icon: '🚉' }, { type: 'Scambio', icon: '🛤️' }, { type: 'Cippo', icon: '📍' } ].map(item => (
                     <li key={item.type}>
-                      <button className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-blue-600/30 flex items-center gap-3 transition-colors" onClick={() => { 
+                      <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors" onClick={() => { 
                         setSingularities(prev => {
                           const next = [...prev, { km: contextMenu.kmLabel, type: item.type, icon: item.icon }];
                           const fileParam = searchParams.get('file') || lastServerFile?.file;
@@ -1737,9 +1736,9 @@ function DataVisualizer() {
           </div>
 
           {/* EN 13231-3 Section Defects Heatmap */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6 w-full max-w-full min-w-0">
-            <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-slate-700">{t('sectionDefectsTitle') || 'Gravità Difetti per Sezione (EN 13231-3)'}</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6 w-full max-w-full min-w-0">
+            <div className="border-b border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-slate-800">{t('sectionDefectsTitle') || 'Gravità Difetti per Sezione (EN 13231-3)'}</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">{t('sectionLength') || 'Lunghezza Sezione'} (m):</span>
                 <input 

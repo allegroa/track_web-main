@@ -20,6 +20,55 @@ export async function POST(request) {
       return NextResponse.json({ success: true, message: 'Folder created successfully' });
     }
 
+    if (action === 'update-metadata') {
+      const { sessionId, updates } = body;
+      if (!sessionId || !updates) {
+        return NextResponse.json({ error: 'sessionId and updates are required' }, { status: 400 });
+      }
+      
+      const sessionPath = path.join(basePath, sessionId);
+      
+      try {
+        const files = await fs.readdir(sessionPath);
+        let dbFile = files.find(f => f.endsWith('_db.json'));
+        let dbFilePath;
+        let dbData = {};
+        
+        if (!dbFile) {
+           // Se non esiste, lo creiamo
+           dbFile = `${sessionId}_db.json`;
+           dbFilePath = path.join(sessionPath, dbFile);
+        } else {
+           dbFilePath = path.join(sessionPath, dbFile);
+           try {
+             const fileContent = await fs.readFile(dbFilePath, 'utf8');
+             dbData = JSON.parse(fileContent);
+           } catch (e) {
+             console.warn('Error reading db.json, starting fresh', e);
+           }
+        }
+        
+        // Applica gli update ai metadati
+        Object.assign(dbData, updates);
+        
+        await fs.writeFile(dbFilePath, JSON.stringify(dbData, null, 2), 'utf8');
+
+        // Se è stata aggiornata la stazione di partenza, salviamola in station.json
+        if (updates.stazionePartenza) {
+          try {
+            const { addStation } = await import('../../../../../../TGM/backend/utils/stationManager.js');
+            await addStation(basePath, updates.stazionePartenza);
+          } catch (e) {
+            console.warn('Errore aggiornamento station.json da manage:', e);
+          }
+        }
+        
+        return NextResponse.json({ success: true, message: 'Metadata updated successfully', data: dbData });
+      } catch (err) {
+        return NextResponse.json({ error: 'Failed to update metadata: ' + err.message }, { status: 500 });
+      }
+    }
+
     if (action === 'move') {
       if (!sourceFolder || !destinationFolder) {
         return NextResponse.json({ error: 'sourceFolder and destinationFolder are required' }, { status: 400 });
@@ -33,6 +82,20 @@ export async function POST(request) {
 
       await fs.rename(sourcePath, destPath);
       return NextResponse.json({ success: true, message: 'Folder moved successfully' });
+    }
+
+    if (action === 'delete') {
+      const { sessionId } = body;
+      if (!sessionId) {
+        return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
+      }
+      const sessionPath = path.join(basePath, sessionId);
+      try {
+        await fs.rm(sessionPath, { recursive: true, force: true });
+        return NextResponse.json({ success: true, message: 'Session deleted successfully' });
+      } catch (err) {
+        return NextResponse.json({ error: 'Failed to delete session: ' + err.message }, { status: 500 });
+      }
     }
 
     if (action === 'clear-database') {

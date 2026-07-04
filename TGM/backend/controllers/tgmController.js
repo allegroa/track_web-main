@@ -28,15 +28,28 @@ export async function getSessions(databasePath) {
              }
           }
 
+          // Controlla se c'è un file di metadati salvato manualmente (_db.json)
+          let customDbData = {};
+          try {
+             const dirFiles = await fs.readdir(sessionFolderPath);
+             const dbFile = dirFiles.find(f => f.endsWith('_db.json'));
+             if (dbFile) {
+                const dbContent = await fs.readFile(path.join(sessionFolderPath, dbFile), 'utf8');
+                customDbData = JSON.parse(dbContent);
+             }
+          } catch (e) {
+             console.warn('No custom db data or parse error:', e);
+          }
+
           sessions.push({
             ...sessionInfo,
             isSession: true,
             hasExceedances: !!sessionFiles?.exceedances,
             hasTqi: !!sessionFiles?.tqi,
             hasParameters: !!sessionFiles?.parameters,
-            stazionePartenza: lineInfo?.stazionePartenza || '',
-            stazioneArrivo: lineInfo?.stazioneArrivo || '',
-            direction: lineInfo?.direction || ''
+            stazionePartenza: customDbData.stazionePartenza || lineInfo?.stazionePartenza || '',
+            stazioneArrivo: customDbData.stazioneArrivo || lineInfo?.stazioneArrivo || '',
+            direction: customDbData.direction || lineInfo?.direction || ''
           });
         } else {
           // Aggiungiamo anche le cartelle normali

@@ -38,7 +38,9 @@ La vista visualizza le directory di sessione del TGM, che seguono il pattern `YY
 4. **STARTING KM**: Progressiva chilometrica iniziale. Formattata rigorosamente con 3 cifre decimali (es. `100.000`). Include icona di ordinamento.
 5. **ENDING KM**: Progressiva chilometrica finale. Formattata rigorosamente con 3 cifre decimali (es. `100.500`). Include icona di ordinamento.
 6. **LENGTH (KM)**: Lunghezza totale della tratta calcolata come differenza assoluta tra `starting_km` ed `ending_km`. Formattata con 3 cifre decimali.
-7. **START STATION**: Identificativo della stazione di partenza estratto dal parametro "Line Name" del file CSV (es. `XDL`).
+7. **START STATION**: Identificativo della stazione di partenza estratto dal parametro "Line Name" del file CSV (es. `XDL`). 
+   * **Validazione:** Il campo accetta esclusivamente caratteri alfabetici (nessun numero o data). In caso contrario, verrà esposto un alert visivo (⚠️) indicando che il valore non è valido.
+   * **Modifica Manuale:** È presente un'icona a forma di matita (✏️) al passaggio del mouse che permette all'utente di correggere il valore manualmente; il salvataggio modificherà permanentemente il file metadati json (`_db.json`) della sessione previa richiesta di conferma.
 8. **DIR.**: Direzione del treno estratta dal parametro "Line Name" del file CSV (es. `UP` o `DN`).
 9. **FILES PRESENT**: Tre indicatori/badge visivi che mostrano la presenza dei 3 file CSV obbligatori:
    * **Parametri** (da `軌道參數報表.csv`)

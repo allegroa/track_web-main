@@ -126,8 +126,8 @@ export async function extractLineNameData(csvFilePath) {
     
     if (columns.length > 1) {
       const lineNameRaw = columns[1].trim();
-      // Line Name format: [7 digits (unknown)][Station codes][UP|DN]
-      const match = lineNameRaw.match(/^(\d+)(.*?)(UP|DN)$/i);
+      // Line Name format: [digits (unknown)][Station codes][UP|DN][optional track numbers]
+      const match = lineNameRaw.match(/^(\d+)(.*?)(UP|DN)(\d*)$/i);
       if (match) {
         const center = match[2];
         const direction = match[3].toUpperCase();
@@ -140,6 +140,14 @@ export async function extractLineNameData(csvFilePath) {
           stazionePartenza: startStation,
           stazioneArrivo: endStation,
           direction
+        };
+      } else {
+        // Fallback: se il Line Name è generico (es. "20260226") lo restituiamo direttamente come stazionePartenza
+        return {
+          lineNameRaw,
+          stazionePartenza: lineNameRaw !== 'NoName' ? lineNameRaw : '',
+          stazioneArrivo: '',
+          direction: ''
         };
       }
     }

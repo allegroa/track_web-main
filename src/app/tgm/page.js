@@ -1,4 +1,4 @@
-import TGMView from '../../../TGM/frontend/views/TGMView';
+import TGMViewClient from '../../components/TGMViewClient';
 
 export const metadata = {
   title: 'TGM - Track Geometry Measurement',
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function TGMPage() {
-  return <TGMView />;
+  return <TGMViewClient />;
 }

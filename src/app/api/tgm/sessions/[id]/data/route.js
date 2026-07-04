@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { getSessionData } from '../../../../../../TGM/backend/controllers/tgmController.js';
+import { getSessionData } from '../../../../../../../TGM/backend/controllers/tgmController.js';
 
 export async function GET(request, context) {
   // In Next.js 15, `context.params` is a Promise
