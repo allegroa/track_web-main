@@ -94,8 +94,21 @@ function DataVisualizer() {
   const searchParams = useSearchParams();
   const token = useAuthToken();
   const chartRef = useRef(null);
+  const chartContainerRef = useRef(null);
   const hoverThrottleRef = useRef(0); // throttle map updates to ~30fps
   const [hoveredCoords, setHoveredCoords] = useState(null);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      if (chartContainerRef.current?.requestFullscreen) {
+        chartContainerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
   const [singularities, setSingularities] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
   const [defectStats, setDefectStats] = useState({});
@@ -1590,8 +1603,16 @@ function DataVisualizer() {
 
     {headers.length > 0 ? (
         <>
-          <div className="relative bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden mb-6 p-6" style={{ height: Math.max(420, selectedYs.length * 150) + 100 }}>
+          <div ref={chartContainerRef} className="relative bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden mb-6 p-6" style={{ height: Math.max(420, selectedYs.length * 150) + 100 }}>
             <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+              <button 
+                onClick={toggleFullScreen}
+                className="bg-slate-900 text-white hover:bg-slate-800 px-3 py-2 rounded-md shadow-sm text-sm flex items-center gap-2 font-medium transition-all"
+                title="A tutto schermo"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                Full Screen
+              </button>
               {geoDatasets.length > 1 && (
                 <button className="bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-md shadow-sm text-sm flex items-center font-medium transition-all" onClick={() => setShowGeoModal(true)}>Gestione Acquisizioni</button>
               )}

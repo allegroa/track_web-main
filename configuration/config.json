@@ -19,5 +19,14 @@
       "dataSourceType": "local",
       "dataSourcePath": "E:\\Software\\track_web-main\\database"
     }
+  },
+  "emailConfig": {
+    "email": "railpulse@adts.it",
+    "password": "RaIlpul1!26",
+    "pollingInterval": 1,
+    "imapPort": 993,
+    "imapHost": "imaps.aruba.it",
+    "smtpHost": "smtps.aruba.it",
+    "smtpPort": 465
   }
 }

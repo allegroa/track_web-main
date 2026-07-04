@@ -19,6 +19,7 @@ async function deleteFolder(folderPath) {
 export async function POST(request) {
   const tempDirName = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const tempUploadDir = path.join(process.cwd(), 'tmp_uploads', tempDirName);
+  const emailQueueDir = path.join(process.cwd(), 'tmp_uploads', 'email_queue');
   
   try {
     // 1. Parsing dei dati in ingresso
@@ -33,27 +34,50 @@ export async function POST(request) {
     const basePath = path.normalize(targetPath);
     await fs.mkdir(tempUploadDir, { recursive: true });
 
-    const files = formData.getAll('files');
-    if (files.length === 0) {
-      return NextResponse.json({ error: 'No files uploaded' }, { status: 400 });
-    }
-
     let isArchive = false;
     let archiveFilePath = '';
     let archiveOriginalName = '';
+    
+    const serverFiles = formData.getAll('serverFiles');
+    let emailFileName = null;
 
-    // Verifica se l'input contiene un archivio compressi ZIP/RAR
-    if (files.length === 1) {
-      const file = files[0];
-      const ext = path.extname(file.name).toLowerCase();
+    if (serverFiles && serverFiles.length > 0) {
+      // Importazione da Email Queue
+      const fileName = serverFiles[0];
+      emailFileName = fileName;
+      const sourcePath = path.join(emailQueueDir, fileName);
+      
+      const ext = path.extname(fileName).toLowerCase();
       if (ext === '.zip' || ext === '.rar') {
         isArchive = true;
-        archiveOriginalName = path.basename(file.name, ext);
-        archiveFilePath = path.join(tempUploadDir, file.name);
+        archiveOriginalName = path.basename(fileName, ext);
+        archiveFilePath = path.join(tempUploadDir, fileName);
         
-        // Salvataggio temporaneo dell'archivio
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await fs.writeFile(archiveFilePath, buffer);
+        // Copiamo il file dalla coda alla cartella temporanea di importazione
+        await fs.copyFile(sourcePath, archiveFilePath);
+      } else {
+        return NextResponse.json({ error: 'Unsupported file type in email queue' }, { status: 400 });
+      }
+    } else {
+      // Importazione standard da Browser (Drag&Drop)
+      const files = formData.getAll('files');
+      if (files.length === 0) {
+        return NextResponse.json({ error: 'No files uploaded' }, { status: 400 });
+      }
+
+      // Verifica se l'input contiene un archivio compressi ZIP/RAR
+      if (files.length === 1) {
+        const file = files[0];
+        const ext = path.extname(file.name).toLowerCase();
+        if (ext === '.zip' || ext === '.rar') {
+          isArchive = true;
+          archiveOriginalName = path.basename(file.name, ext);
+          archiveFilePath = path.join(tempUploadDir, file.name);
+          
+          // Salvataggio temporaneo dell'archivio
+          const buffer = Buffer.from(await file.arrayBuffer());
+          await fs.writeFile(archiveFilePath, buffer);
+        }
       }
     }
 
@@ -69,8 +93,9 @@ export async function POST(request) {
         await deleteFolder(tempUploadDir);
         return NextResponse.json({ error: err.message }, { status: 400 });
       }
-    } else {
-      // Scrittura dei file sfusi ricreando la struttura relativa
+    } else if (!emailFileName) {
+      // Scrittura dei file sfusi ricreando la struttura relativa (solo per Drag&Drop)
+      const files = formData.getAll('files');
       for (const file of files) {
         // Se caricato tramite directory, file.name contiene il percorso relativo
         const relativePath = file.name;
@@ -216,6 +241,15 @@ export async function POST(request) {
       }
     } catch (stationErr) {
       console.warn('Impossibile aggiornare station.json:', stationErr);
+    }
+
+    // Se stiamo importando da email, eliminiamo il file dalla coda originale
+    if (emailFileName) {
+      try {
+        await fs.unlink(path.join(emailQueueDir, emailFileName));
+      } catch (err) {
+        console.warn('Impossibile eliminare il file dalla coda email:', err);
+      }
     }
 
     // 7. Pulizia finale temporanei

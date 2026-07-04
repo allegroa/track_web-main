@@ -82,6 +82,9 @@ const resources = {
       duplicateConfirmText: 'The session {{folderName}} already exists. Do you want to overwrite it?',
       importDirectory: 'Import Directory',
       importArchive: 'Import Archive (ZIP/RAR)',
+      emailFilesReady_one: 'There is {{count}} file received via email ready for import.',
+      emailFilesReady_other: 'There are {{count}} files received via email ready for import.',
+      importNow: 'Import Now',
     },
   },
   zh: {
@@ -144,6 +147,9 @@ const resources = {
       cancelAndReturn: '取消并返回',
       saving: '保存中...',
       saveConfiguration: '保存配置',
+      emailFilesReady_one: '有 {{count}} 个通过电子邮件接收的文件准备导入。',
+      emailFilesReady_other: '有 {{count}} 个通过电子邮件接收的文件准备导入。',
+      importNow: '立即导入',
     },
   },
   'zh-TW': {
@@ -206,6 +212,9 @@ const resources = {
       cancelAndReturn: '取消並返回',
       saving: '儲存中...',
       saveConfiguration: '儲存設定',
+      emailFilesReady_one: '有 {{count}} 個透過電子郵件接收的檔案準備匯入。',
+      emailFilesReady_other: '有 {{count}} 個透過電子郵件接收的檔案準備匯入。',
+      importNow: '立即匯入',
     },
   },
   de: {
@@ -287,6 +296,9 @@ const resources = {
       duplicateConfirmText: 'Die Sitzung {{folderName}} existiert bereits. Möchten Sie sie überschreiben?',
       importDirectory: 'Ordner importieren',
       importArchive: 'Archiv importieren (ZIP/RAR)',
+      emailFilesReady_one: 'Es gibt {{count}} per E-Mail empfangene Datei, die für den Import bereit ist.',
+      emailFilesReady_other: 'Es gibt {{count}} per E-Mail empfangene Dateien, die für den Import bereit sind.',
+      importNow: 'Jetzt importieren',
     },
   },
   it: {
@@ -368,6 +380,9 @@ const resources = {
       duplicateConfirmText: 'La sessione {{folderName}} esiste già. Vuoi sovrascriverla?',
       importDirectory: 'Importa Cartella',
       importArchive: 'Importa Archivio (ZIP/RAR)',
+      emailFilesReady_one: 'C\'è {{count}} file ricevuto via email pronto per l\'importazione.',
+      emailFilesReady_other: 'Ci sono {{count}} file ricevuti via email pronti per l\'importazione.',
+      importNow: 'Importa Ora',
     },
   },
 };

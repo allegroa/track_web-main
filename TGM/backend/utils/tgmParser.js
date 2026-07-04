@@ -44,6 +44,7 @@ export async function parseCSVFile(filePath) {
     }
 
     return new Promise((resolve, reject) => {
+      const seenHeaders = new Set();
       Papa.parse(fileContent, {
         header: true,
         skipEmptyLines: true,
@@ -65,7 +66,19 @@ export async function parseCSVFile(filePath) {
               return exceedanceHeaders[index];
             }
           }
-          return header ? header.replace(/[^\x20-\x7E]/g, '').trim() : header;
+          let cleanHeader = header ? header.replace(/[\x00-\x1F\x7F-\x9F\uFEFF]/g, '').trim() : header;
+          
+          if (cleanHeader) {
+            let original = cleanHeader;
+            let counter = 1;
+            while (seenHeaders.has(cleanHeader)) {
+              cleanHeader = `${original}_${counter}`;
+              counter++;
+            }
+            seenHeaders.add(cleanHeader);
+          }
+          
+          return cleanHeader;
         },
         complete: (results) => {
           resolve(results.data);

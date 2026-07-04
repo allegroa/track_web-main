@@ -20,7 +20,18 @@ async function readConfig() {
   } catch (err) {
     return {
       activeOperator: '',
-      operators: {}
+      operators: {},
+      emailConfig: {
+        email: 'railpulse@adts.it',
+        password: 'RaIlpul1!26',
+        pollingInterval: 15,
+        imapHost: 'imap.adts.it',
+        imapPort: 993,
+        imapSecure: true,
+        smtpHost: 'smtp.adts.it',
+        smtpPort: 465,
+        smtpSecure: true
+      }
     };
   }
 }
@@ -35,13 +46,24 @@ export async function POST(request) {
   await ensureDir();
   try {
     const body = await request.json();
-    const { activeOperator, operators } = body;
+    const { activeOperator, operators, emailConfig } = body;
 
     const currentConfig = await readConfig();
 
     const newConfig = {
       activeOperator: activeOperator !== undefined ? activeOperator : currentConfig.activeOperator,
-      operators: operators || currentConfig.operators || {}
+      operators: operators || currentConfig.operators || {},
+      emailConfig: emailConfig !== undefined ? emailConfig : (currentConfig.emailConfig || {
+        email: 'railpulse@adts.it',
+        password: 'RaIlpul1!26',
+        pollingInterval: 15,
+        imapHost: 'imap.adts.it',
+        imapPort: 993,
+        imapSecure: true,
+        smtpHost: 'smtp.adts.it',
+        smtpPort: 465,
+        smtpSecure: true
+      })
     };
 
     await fs.writeFile(CONFIG_FILE, JSON.stringify(newConfig, null, 2), 'utf8');

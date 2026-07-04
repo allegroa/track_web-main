@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TGMDatabaseVisualizer from './TGMDatabaseVisualizer';
+import TGMMaintenanceDatabase from './TGMMaintenanceDatabase';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions }) {
   const { t } = useTranslation();
   const [baseDbPath, setBaseDbPath] = useState('');
+  const baseDbPathRef = useRef('');
   const [currentSubFolder, setCurrentSubFolder] = useState('');
+  const currentSubFolderRef = useRef('');
   const [sessions, setSessions] = useState([]);
   const [stationsList, setStationsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('database'); // 'database' | 'maintenance'
 
   // Stati per l'importazione
   const [isDragging, setIsDragging] = useState(false);
@@ -59,6 +63,8 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
       
       setSessions(json.sessions || []);
       setCurrentSubFolder(subFolder);
+      currentSubFolderRef.current = subFolder;
+      baseDbPathRef.current = targetPath;
 
       try {
         const stationsRes = await fetch(`/api/tgm/stations?path=${encodeURIComponent(targetPath)}`);
@@ -104,7 +110,12 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
        return;
     }
     const currentItem = queueRef.current[currentIndex];
-    runImportFlow(currentItem.files, currentItem.isArchive);
+    
+    if (currentItem.isEmailImport) {
+      runImportFlow(currentItem, true);
+    } else {
+      runImportFlow(currentItem.files, currentItem.isArchive);
+    }
   };
   
   const handleNextInQueue = () => {
@@ -112,6 +123,21 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
     setQueueIndex(indexRef.current);
     processNextInQueue();
   };
+
+  const startEmailImportQueue = (filenames) => {
+    if (!filenames || filenames.length === 0) return;
+    const newQueue = filenames.map(name => ({
+      isEmailImport: true,
+      filename: name,
+      name: name
+    }));
+    startImportQueue(newQueue);
+  };
+
+  // Expose methods to parent via a ref or by attaching to window (for simplicity in this specific architecture)
+  useEffect(() => {
+    window.startEmailImportQueue = startEmailImportQueue;
+  }); // Run on every render to avoid stale closures
 
   const runImportFlow = async (filesArray, isArchiveImport) => {
     if (filesArray.length === 0) return;
@@ -126,10 +152,17 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
     setCancelSource(cancelTokenSource);
 
     const formData = new FormData();
-    formData.append('path', baseDbPath + (currentSubFolder ? '/' + currentSubFolder : ''));
+    const currentBasePath = baseDbPathRef.current;
+    const currentSub = currentSubFolderRef.current;
+    formData.append('path', currentBasePath + (currentSub ? '/' + currentSub : ''));
     formData.append('overwrite', 'false');
 
-    if (isArchiveImport) {
+    // Handle email import vs standard drag&drop
+    const isEmailImport = filesArray.isEmailImport;
+
+    if (isEmailImport) {
+      formData.append('serverFiles', filesArray.filename);
+    } else if (isArchiveImport) {
       formData.append('files', filesArray[0].file, filesArray[0].relPath);
     } else {
       for (const item of filesArray) {
@@ -228,10 +261,16 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
     setCancelSource(cancelTokenSource);
 
     const formData = new FormData();
-    formData.append('path', baseDbPath + (currentSubFolder ? '/' + currentSubFolder : ''));
+    const currentBasePath = baseDbPathRef.current;
+    const currentSub = currentSubFolderRef.current;
+    formData.append('path', currentBasePath + (currentSub ? '/' + currentSub : ''));
     formData.append('overwrite', 'true');
 
-    if (isArchiveImportRef.current) {
+    const isEmailImport = filesRef.current.isEmailImport;
+
+    if (isEmailImport) {
+      formData.append('serverFiles', filesRef.current.filename);
+    } else if (isArchiveImportRef.current) {
       formData.append('files', filesRef.current[0].file, filesRef.current[0].relPath);
     } else {
       for (const item of filesRef.current) {
@@ -469,6 +508,14 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
           </span>
         </div>
         <div className="flex gap-3 items-center">
+          {viewMode === 'database' && (
+            <button
+              onClick={() => setViewMode('maintenance')}
+              className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-sm"
+            >
+              🛠️ {t('maintenance', 'Manutenzioni')}
+            </button>
+          )}
           {/* Pulsante Importazione File */}
           <div className="relative">
             <button
@@ -536,15 +583,22 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
       )}
 
       <div className="flex-1 overflow-hidden rounded-xl border border-slate-200">
-        <TGMDatabaseVisualizer 
-          sessions={sessions} 
-          stationsList={stationsList}
-          currentSubFolder={currentSubFolder}
-          onNavigate={handleNavigate}
-          onPlaySession={(s) => onPlaySession(s, baseDbPath + (currentSubFolder ? '/' + currentSubFolder : ''))}
-          onMoveFolder={handleMoveFolder}
-          onDeleteSession={handleDeleteSession}
-        />
+        {viewMode === 'maintenance' ? (
+          <TGMMaintenanceDatabase 
+            dbPath={baseDbPath} 
+            onNavigateBack={() => setViewMode('database')} 
+          />
+        ) : (
+          <TGMDatabaseVisualizer 
+            sessions={sessions} 
+            stationsList={stationsList}
+            currentSubFolder={currentSubFolder}
+            onNavigate={handleNavigate}
+            onPlaySession={(s, dbPath) => onPlaySession(s, baseDbPath + (currentSubFolder ? '/' + currentSubFolder : ''))}
+            onMoveFolder={handleMoveFolder}
+            onDeleteSession={handleDeleteSession}
+          />
+        )}
       </div>
 
       {/* Overlay di Caricamento e Macchina a Stati */}

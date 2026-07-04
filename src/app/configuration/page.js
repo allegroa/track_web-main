@@ -25,6 +25,20 @@ export default function ConfigurationPage() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
   const [isFileBrowserOpen, setIsFileBrowserOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const [emailConfig, setEmailConfig] = useState({
+    email: 'railpulse@adts.it',
+    password: 'RaIlpul1!26',
+    pollingInterval: 15,
+    imapHost: 'imap.adts.it',
+    imapPort: 993,
+    imapSecure: true,
+    smtpHost: 'smtp.adts.it',
+    smtpPort: 465,
+    smtpSecure: true
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
 
   useEffect(() => {
     fetchConfig();
@@ -35,6 +49,9 @@ export default function ConfigurationPage() {
       const res = await fetch('/api/configuration');
       const data = await res.json();
       setAllData(data);
+      if (data.emailConfig) {
+        setEmailConfig(data.emailConfig);
+      }
       const ops = data.operators ? Object.keys(data.operators) : [];
       setOperators(ops);
       
@@ -106,7 +123,8 @@ export default function ConfigurationPage() {
           operators: {
             ...allData.operators,
             [cleanOpName]: config
-          }
+          },
+          emailConfig: emailConfig
         })
       });
 
@@ -125,6 +143,30 @@ export default function ConfigurationPage() {
       setMessage({ type: 'error', text: t('apiConnectionError') || 'Impossibile connettersi alle API' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    setMessage({ type: '', text: '' });
+    
+    try {
+      const res = await fetch('/api/tgm/email/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailConfig)
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message || 'Connessione test IMAP riuscita!' });
+      } else {
+        setMessage({ type: 'error', text: 'Test fallito: ' + data.error });
+      }
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Errore di rete durante il test email.' });
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -175,9 +217,35 @@ export default function ConfigurationPage() {
               </span>
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              {t('tgmConfigDesc') || "Gestisci le preferenze di visualizzazione specifiche per ciascun operatore. L'operatore salvato diverrà quello attivo."}
+              {t('tgmConfigDesc') || "Gestisci le preferenze di sistema e di visualizzazione per l'operatore attivo."}
             </p>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-slate-200 px-6 bg-slate-50/50">
+          <button
+            type="button"
+            onClick={() => setActiveTab('general')}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
+              activeTab === 'general'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            {t('generalConfig') || 'Generale'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('email')}
+            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
+              activeTab === 'email'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            {t('emailConfig') || 'Email (Auto Import)'}
+          </button>
         </div>
 
         {/* Content */}
@@ -201,6 +269,8 @@ export default function ConfigurationPage() {
             </div>
           )}
 
+          {activeTab === 'general' && (
+            <>
           {/* Selezione Operatore */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 md:p-6 space-y-4 shadow-sm">
             <div className="flex justify-between items-center">
@@ -382,6 +452,183 @@ export default function ConfigurationPage() {
             </div>
 
           </div>
+          </>
+          )}
+
+          {activeTab === 'email' && (
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 md:p-6 space-y-6 shadow-sm">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-700 border-b border-slate-200 pb-2 mb-4">
+                {t('emailCredentials') || 'Credenziali Casella IMAP'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('emailAddress') || 'Indirizzo Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={emailConfig.email}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, email: e.target.value })}
+                    onKeyDown={preventEnterSubmit}
+                    className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="railpulse@adts.it"
+                  />
+                </div>
+
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('emailPassword') || 'Password'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={emailConfig.password}
+                      onChange={(e) => setEmailConfig({ ...emailConfig, password: e.target.value })}
+                      onKeyDown={preventEnterSubmit}
+                      className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 pr-10"
+                      placeholder="••••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    >
+                      {showPassword ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('imapHost') || 'Host IMAP (Ricezione)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={emailConfig.imapHost}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, imapHost: e.target.value })}
+                    onKeyDown={preventEnterSubmit}
+                    className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="es. imap.dominio.it"
+                  />
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('imapPort') || 'Porta IMAP'}
+                  </label>
+                  <input
+                    type="number"
+                    value={emailConfig.imapPort}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, imapPort: parseInt(e.target.value) || 993 })}
+                    onKeyDown={preventEnterSubmit}
+                    className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('smtpHost') || 'Host SMTP (Invio Notifiche)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={emailConfig.smtpHost}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })}
+                    onKeyDown={preventEnterSubmit}
+                    className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="es. smtp.dominio.it"
+                  />
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {t('smtpPort') || 'Porta SMTP'}
+                  </label>
+                  <input
+                    type="number"
+                    value={emailConfig.smtpPort}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) || 465 })}
+                    onKeyDown={preventEnterSubmit}
+                    className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="flex items-center space-x-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                  <input
+                    type="checkbox"
+                    id="imapSecure"
+                    checked={emailConfig.imapSecure}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, imapSecure: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="imapSecure" className="text-sm text-slate-700 font-medium select-none cursor-pointer">
+                    {t('imapSecure') || 'Usa SSL/TLS per IMAP (Ricezione)'}
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                  <input
+                    type="checkbox"
+                    id="smtpSecure"
+                    checked={emailConfig.smtpSecure}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, smtpSecure: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="smtpSecure" className="text-sm text-slate-700 font-medium select-none cursor-pointer">
+                    {t('smtpSecure') || 'Usa SSL/TLS per SMTP (Invio)'}
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-start mt-6">
+                <button
+                  type="button"
+                  onClick={handleTestEmail}
+                  disabled={testingEmail || !emailConfig.email || !emailConfig.password}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {testingEmail ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {t('testingConnection') || 'Test in corso...'}
+                    </>
+                  ) : (
+                    <>
+                      <span>🔌</span>
+                      {t('testConnection') || 'Test Connessione Email'}
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-700 border-b border-slate-200 pb-2 mt-8 mb-4">
+                {t('emailPolling') || 'Controllo Automatico'}
+              </h3>
+
+              <div className="flex flex-col space-y-2 w-full md:w-1/2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {t('pollingInterval') || 'Intervallo di Controllo (Minuti)'}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1440"
+                  value={emailConfig.pollingInterval}
+                  onChange={(e) => setEmailConfig({ ...emailConfig, pollingInterval: parseInt(e.target.value) || 15 })}
+                  onKeyDown={preventEnterSubmit}
+                  className="bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-800 transition-all focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Ogni quanti minuti il sistema controllerà la posta per scaricare nuovi archivi ZIP/RAR in background.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Azioni */}
           <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:justify-between items-center gap-4">

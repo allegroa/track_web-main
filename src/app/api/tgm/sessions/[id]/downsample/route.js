@@ -59,7 +59,20 @@ export async function GET(request, context) {
           const lower = row.map(c => (c || '').toString().trim().toLowerCase());
           if (lower.some(c => c === 'km' || c.includes('km'))) {
             headerFound = true;
-            headers = row.map(c => (c || '').toString().replace(/[^\x20-\x7E]/g, '').trim());
+            const seenHeaders = new Set();
+            headers = row.map((c, index) => {
+              let cleanHeader = (c || '').toString().replace(/[\x00-\x1F\x7F-\x9F\uFEFF]/g, '').trim();
+              if (cleanHeader) {
+                let original = cleanHeader;
+                let counter = 1;
+                while (seenHeaders.has(cleanHeader)) {
+                  cleanHeader = `${original}_${counter}`;
+                  counter++;
+                }
+                seenHeaders.add(cleanHeader);
+              }
+              return cleanHeader;
+            });
           } else {
             metadataLines.push(row.join(';'));
           }
