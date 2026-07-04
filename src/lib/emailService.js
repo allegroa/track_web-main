@@ -1,5 +1,6 @@
 import imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
+import nodemailer from 'nodemailer';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -26,6 +27,22 @@ export async function checkNewEmails(emailConfig) {
       tlsOptions: { rejectUnauthorized: false } // For self-signed certs just in case
     }
   };
+
+  // Setup SMTP Transporter for replies
+  const smtpHost = emailConfig.smtpHost || `smtp.${domain}`;
+  const smtpPort = emailConfig.smtpPort || 465;
+  const smtpSecure = emailConfig.smtpSecure !== undefined ? emailConfig.smtpSecure : true;
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: email,
+      pass: password,
+    },
+    tls: { rejectUnauthorized: false }
+  });
 
   await fs.mkdir(TMP_UPLOAD_DIR, { recursive: true });
   
@@ -77,23 +94,23 @@ export async function checkNewEmails(emailConfig) {
         }
       }
 
-      // If we processed this email and it had what we wanted, mark it as deleted and log it
-      if (hasValidAttachment) {
-        await connection.addFlags(message.attributes.uid, '\\Deleted');
-        deletedEmailsCount++;
-        
-        // Try to get sender from headers
-        let sender = 'Sconosciuto';
-        try {
-          const headerPart = message.parts?.find(part => part.which === 'HEADER.FIELDS (FROM TO SUBJECT DATE)');
-          if (headerPart && headerPart.body) {
-            const parsedHeader = await simpleParser(headerPart.body);
-            sender = parsedHeader.from?.text || parsedHeader.from?.value?.[0]?.address || 'Sconosciuto';
-          }
-        } catch (err) {
-          console.error('Error parsing email header for log:', err);
+      // Parse sender from headers for all emails
+      let sender = 'Sconosciuto';
+      try {
+        const headerPart = message.parts?.find(part => part.which === 'HEADER.FIELDS (FROM TO SUBJECT DATE)');
+        if (headerPart && headerPart.body) {
+          const parsedHeader = await simpleParser(headerPart.body);
+          sender = parsedHeader.from?.text || parsedHeader.from?.value?.[0]?.address || 'Sconosciuto';
         }
+      } catch (err) {
+        console.error('Error parsing email header:', err);
+      }
 
+      // Mark the email for deletion regardless of compliance
+      await connection.addFlags(message.attributes.uid, '\\Deleted');
+      deletedEmailsCount++;
+
+      if (hasValidAttachment) {
         const justDownloaded = downloadedFiles.filter(f => f.messageUid === message.attributes.uid);
         const fileNames = justDownloaded.map(f => f.originalName).join(', ');
         
@@ -102,6 +119,29 @@ export async function checkNewEmails(emailConfig) {
           await fs.appendFile(LOG_FILE, logEntry, 'utf8');
         } catch (err) {
           console.error('Error writing to email log:', err);
+        }
+      } else {
+        // Non-compliant email (no valid ZIP/RAR)
+        const logEntry = `[${new Date().toISOString()}] Scartato da: ${sender} | Motivo: Nessun archivio ZIP/RAR trovato\n`;
+        try {
+          await fs.appendFile(LOG_FILE, logEntry, 'utf8');
+        } catch (err) {
+          console.error('Error writing to email log:', err);
+        }
+
+        // Send reply to sender
+        if (sender && sender !== 'Sconosciuto') {
+          try {
+            await transporter.sendMail({
+              from: email,
+              to: sender,
+              subject: 'Re: Errore Importazione TGM',
+              text: 'Il sistema ha ricevuto la tua email, ma non ha rilevato alcun archivio compresso valido (.zip o .rar) in allegato. L\'importazione non è andata a buon fine. Assicurati di allegare un archivio corretto.'
+            });
+            console.log('Sent error reply to:', sender);
+          } catch (err) {
+            console.error('Failed to send error reply via SMTP:', err);
+          }
         }
       }
     }

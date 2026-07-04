@@ -85,6 +85,7 @@ const resources = {
       emailFilesReady_one: 'There is {{count}} file received via email ready for import.',
       emailFilesReady_other: 'There are {{count}} files received via email ready for import.',
       importNow: 'Import Now',
+      maintenance: 'Maintenance',
     },
   },
   zh: {
@@ -150,6 +151,7 @@ const resources = {
       emailFilesReady_one: '有 {{count}} 个通过电子邮件接收的文件准备导入。',
       emailFilesReady_other: '有 {{count}} 个通过电子邮件接收的文件准备导入。',
       importNow: '立即导入',
+      maintenance: '维护',
     },
   },
   'zh-TW': {
@@ -215,6 +217,7 @@ const resources = {
       emailFilesReady_one: '有 {{count}} 個透過電子郵件接收的檔案準備匯入。',
       emailFilesReady_other: '有 {{count}} 個透過電子郵件接收的檔案準備匯入。',
       importNow: '立即匯入',
+      maintenance: '維護',
     },
   },
   de: {
@@ -299,6 +302,7 @@ const resources = {
       emailFilesReady_one: 'Es gibt {{count}} per E-Mail empfangene Datei, die für den Import bereit ist.',
       emailFilesReady_other: 'Es gibt {{count}} per E-Mail empfangene Dateien, die für den Import bereit sind.',
       importNow: 'Jetzt importieren',
+      maintenance: 'Wartung',
     },
   },
   it: {
@@ -383,6 +387,7 @@ const resources = {
       emailFilesReady_one: 'C\'è {{count}} file ricevuto via email pronto per l\'importazione.',
       emailFilesReady_other: 'Ci sono {{count}} file ricevuti via email pronti per l\'importazione.',
       importNow: 'Importa Ora',
+      maintenance: 'Manutenzioni',
     },
   },
 };

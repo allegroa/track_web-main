@@ -124,6 +124,34 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
     processNextInQueue();
   };
 
+  const cleanupEmailQueue = async (item) => {
+    if (item && item.isEmailImport) {
+      try {
+        await fetch(`/api/tgm/email/queue?file=${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
+      } catch (e) {}
+    }
+  };
+
+  const handleSkipConflict = async () => {
+    setDuplicateFolder('');
+    await cleanupEmailQueue(importQueue[queueIndex]);
+    handleNextInQueue();
+  };
+
+  const handleCancelAll = async () => {
+    if (cancelSource) {
+      cancelSource.cancel();
+    }
+    if (importQueue && importQueue.length > 0) {
+      for (let i = queueIndex; i < importQueue.length; i++) {
+        await cleanupEmailQueue(importQueue[i]);
+      }
+    }
+    setImportState(null);
+    setImportQueue([]);
+    setQueueIndex(0);
+  };
+
   const startEmailImportQueue = (filenames) => {
     if (!filenames || filenames.length === 0) return;
     const newQueue = filenames.map(name => ({
@@ -621,10 +649,7 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
                 </p>
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => {
-                      setDuplicateFolder('');
-                      handleNextInQueue();
-                    }}
+                    onClick={handleSkipConflict}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition shadow-sm"
                     autoFocus
                   >
@@ -645,22 +670,20 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
                 </div>
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => {
-                      setImportState(null);
-                      setImportQueue([]);
-                      setQueueIndex(0);
-                    }}
+                    onClick={handleCancelAll}
                     className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold transition"
                   >
                     {t('cancel')}
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (queueIndex >= importQueue.length - 1) {
+                         await cleanupEmailQueue(importQueue[queueIndex]);
                          setImportState(null);
                          setImportQueue([]);
                          setQueueIndex(0);
                       } else {
+                         await cleanupEmailQueue(importQueue[queueIndex]);
                          handleNextInQueue();
                       }
                     }}
@@ -692,14 +715,7 @@ export default function TGMDatabaseContainer({ onPlaySession, extraHeaderActions
 
                 <div className="flex justify-end">
                   <button
-                    onClick={() => {
-                      if (cancelSource) {
-                        cancelSource.cancel();
-                      }
-                      setImportState(null);
-                      setImportQueue([]);
-                      setQueueIndex(0);
-                    }}
+                    onClick={handleCancelAll}
                     className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold transition"
                   >
                     {t('cancel')}

@@ -16,6 +16,16 @@ async function deleteFolder(folderPath) {
   }
 }
 
+async function cleanupEmailFile(emailQueueDir, emailFileName) {
+  if (emailFileName) {
+    try {
+      await fs.unlink(path.join(emailQueueDir, emailFileName));
+    } catch (err) {
+      console.warn('Impossibile eliminare il file dalla coda email:', err);
+    }
+  }
+}
+
 export async function POST(request) {
   const tempDirName = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const tempUploadDir = path.join(process.cwd(), 'tmp_uploads', tempDirName);
@@ -91,6 +101,7 @@ export async function POST(request) {
       } catch (err) {
         // Rimozione immediata in caso di fallimento estrazione (Requisito di specifica)
         await deleteFolder(tempUploadDir);
+        await cleanupEmailFile(emailQueueDir, emailFileName);
         return NextResponse.json({ error: err.message }, { status: 400 });
       }
     } else if (!emailFileName) {
@@ -158,6 +169,7 @@ export async function POST(request) {
 
     if (!foundSessionFolder) {
       await deleteFolder(tempUploadDir);
+      await cleanupEmailFile(emailQueueDir, emailFileName);
       return NextResponse.json({ 
         error: 'Non-standard directory format or incomplete acquisition. Ensure the folder is named in the standard format and contains the three CSV files (*超限報表.csv, *軌道TQI報表.csv, *軌道參數報表.csv).' 
       }, { status: 400 });
@@ -208,6 +220,7 @@ export async function POST(request) {
       await parseCSVFile(parametersFile);
     } catch (parseErr) {
       await deleteFolder(tempUploadDir);
+      await cleanupEmailFile(emailQueueDir, emailFileName);
       return NextResponse.json({ error: `Corrupted CSV files or invalid headers: ${parseErr.message}` }, { status: 400 });
     }
 
@@ -260,6 +273,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Import error:', error);
     await deleteFolder(tempUploadDir);
+    // Nota: in caso di eccezione imprevista, NON eliminiamo il file dalla coda per permettere debug/retry
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
